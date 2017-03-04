@@ -1,0 +1,220 @@
+swagger: '2.0'
+info:
+  title: Memelocker API
+  description: Monolithic Memelocker API
+  version: "1.0.0"
+# the domain of the service
+host: api.memelocker.co
+# array of all schemes that your API supports
+schemes:
+  - https
+# will be prefixed to all paths
+basePath: /v1
+produces:
+  - application/json
+paths:
+  /user/create:
+    post:
+      summary: Create a User
+      description: The user endpoint POSTs User information, creating a User in the system.
+      parameters:
+        - name: user
+          in: body
+          description: The User information.
+          required: true
+          schema:
+           $ref: '#/definitions/UserFull'
+      responses:
+        201:
+          description: User created
+        405:
+          description: User already exists
+        default:
+           description: Unexpected error
+           schema:
+             $ref: '#/definitions/Error'
+  /user/login:
+    post:
+      summary: Login to a User
+      description: POST User credentials, and login!
+      parameters:
+        - name: user
+          in: body
+          description: Just the username and password
+          required: true
+          schema:
+            $ref: '#/definitions/UserLogin'
+      responses:
+        200:
+          description: Login successful
+          schema:
+            $ref: '#/definitions/UserAuth'
+        401:
+          description: Login failure
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /user/delete:
+    post:
+      summary: Delete a User
+      description: POST User credentials, and delete!
+      parameters:
+        - name: user
+          in: body
+          description: The User to delete, must be same as session.
+          required: true
+          schema:
+            $ref: '#/definitions/UserLogin'
+      responses:
+        205:
+          description: Delete successful
+        403:
+          description: Unauthorized deletion
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /meme/save:
+    post:
+      summary: Save a Meme
+      description: Save a Meme for a User.
+      parameters:
+        - name: meme
+          in: body
+          description: The Meme to save for the User.
+          required: true
+          schema:
+            $ref: '#/definitions/Meme'
+      responses:
+        201:
+          description: Save successful
+        404:
+          description: Source link invalid
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /meme/unsave:
+    post:
+      summary: Unsave a Meme
+      description: Unsave a Meme for a User.
+      parameters:
+        - name: meme
+          in: body
+          description: The Meme to unsave for the User.
+          required: true
+          schema:
+            $ref: '#/definitions/Meme'
+      responses:
+        205:
+          description: Unsave successful
+        403:
+          description: Unauthorized unsave
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /tag/create:
+    post:
+      summary: Create a Tag
+      description: Create a Tag
+      parameters:
+       - name: tag
+         in: body
+         description: The Tag to create.
+         required: true
+         schema:
+           $ref: '#/definitions/Tag'
+      responses:
+        201:
+          description: Tag created
+        405:
+          description: Tag exists
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+
+# Definitions for usage in API            
+definitions:
+  User:
+    type: object
+    discriminator: username
+    properties:
+      username:
+        type: string
+        description: The username of the User.
+    required:
+    - username
+  UserLogin:
+    type: object
+    allOf:
+    - $ref: '#/definitions/User'
+    - type: object
+      properties:
+        password:
+          type: string
+          format: password
+          description: The password of the User.
+      required:
+      - password
+  UserFull:
+    type: object
+    allOf:
+    - $ref: '#/definitions/UserLogin'
+    - type: object
+      properties:
+        secret_hint:
+          type: string
+          description: The hint for the secret of the user.
+        secret:
+          type: string
+          format: password
+          description: The secret of the user.
+      required:
+      - secret_hint
+      - secret
+  UserAuth:
+    type: object
+    allOf:
+    - $ref: '#/definitions/User'
+    - type: object
+      properties:
+        token:
+          type: string
+          description: The auth token for the session.
+      required:
+      - token
+  Meme:
+    type: object
+    properties:
+      src_link:
+        type: string
+        description: The link to the meme image.
+      title:
+        type: string
+        description: The title of the meme.
+    required:
+    - src_link
+  Tag:
+    type: object
+    properties:
+      private:
+        type: boolean
+        description: If the Tag is private to the User
+      name:
+        type: string
+        description: Name of the Tag
+    required:
+    - name
+  Error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string
